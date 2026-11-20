@@ -1,5 +1,7 @@
 # Day 11 — Controlled Agent Security (2026)
 
+**Họ tên:** Nguyễn Tiến Đạt · **MSSV:** 2A202603752 · **Lớp:** K5-L3B
+
 > 👤 **Hình thức:** bài tập **cá nhân** (1 người / 1 MSSV).  
 > 🎯 **Mục tiêu:** đóng vai **Blue Team** để học cách xây Guardrails phòng thủ, rồi đóng vai **Red Team** để tấn công agent **Red** hoặc **Red Advance**.  
 > ✅ Làm theo **Checkpoint 1 → 5** trong [`CHECKPOINTS.md`](CHECKPOINTS.md) · nộp theo [`SUBMISSION.md`](SUBMISSION.md).
@@ -158,7 +160,16 @@ cp .env.example .env
 pip install -r requirements.txt
 ```
 
-Điền `.env`: `OPENROUTER_API_KEY` + `RED_TEAM_PROVIDER=openai|gemini` (và key tương ứng).  
-Rồi mở [`CHECKPOINTS.md`](CHECKPOINTS.md) và làm lần lượt Checkpoint 1 → 5.
+Điền `OPENROUTER_API_KEY` và chọn `RED_TEAM_PROVIDER=openai|gemini` cùng key tương ứng trong `.env`. Chạy từ gốc repo sau khi kích hoạt môi trường ảo.
+
+```bash
+python src/main.py --part 2
+python src/main.py --part 3
+python src/main.py --part 4
+python -m pytest tests/smoke tests/public -q
+python scripts/grade.py --submission-dir . --out outputs/grade_report.json
+```
+
+Xem các bước và kết quả mong đợi trong [`CHECKPOINTS.md`](CHECKPOINTS.md).
 
 Nộp theo [`SUBMISSION.md`](SUBMISSION.md) · Quy định: [`RULES.md`](RULES.md).
