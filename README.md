@@ -172,4 +172,6 @@ python scripts/grade.py --submission-dir . --out outputs/grade_report.json
 
 Xem các bước và kết quả mong đợi trong [`CHECKPOINTS.md`](CHECKPOINTS.md).
 
+Lệnh ↔ checkpoint ↔ file sinh ra, gồm cả bonus B1/B2 (lệnh `--part 4` sinh đồng thời `unsafe_*` = Red/B1 và `guards_*` = Red Advance/B2): xem [Phụ lục A](CHECKPOINTS.md#phụ-lục-a--lệnh--checkpoint--file-sinh-ra).
+
 Nộp theo [`SUBMISSION.md`](SUBMISSION.md) · Quy định: [`RULES.md`](RULES.md).
