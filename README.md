@@ -1,6 +1,6 @@
 # Day 11 — Controlled Agent Security (2026)
 
-**Họ tên:** Nguyễn Tiến Đạt · **MSSV:** 2A202603752 · **Lớp:** K5-L3B
+**Họ tên:** Nguyễn Tiến Đạt · **MSSV:** 2A202603752 · **Lớp:** L3B
 
 > 👤 Bài tập **cá nhân** (1 người / 1 MSSV).
 > Hướng dẫn làm bài: [`CHECKPOINTS.md`](CHECKPOINTS.md) · Nộp bài: [`SUBMISSION.md`](SUBMISSION.md) · Tiêu chí chấm: [`RUBRIC.md`](RUBRIC.md) · Quy định: [`RULES.md`](RULES.md)
@@ -32,4 +32,3 @@ Lệnh ↔ checkpoint ↔ file sinh ra, gồm cả bonus B1/B2 (lệnh `--part 4
 
 - Blue: OpenRouter `liquid/lfm-3-1.7b:free` (khóa cứng trong `src/core/config.py`)
 - Red / Red Advance: `openai` / `gpt-4o-mini`
-- `outputs/` chứa artifact từ lần chạy thật — chạy lại `--part 3|4` sẽ ghi đè.
