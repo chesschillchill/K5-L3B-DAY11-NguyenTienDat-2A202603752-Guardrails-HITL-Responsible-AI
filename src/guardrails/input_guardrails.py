@@ -17,6 +17,7 @@ from google.genai import types
 from google.adk.plugins import base_plugin
 from google.adk.agents.invocation_context import InvocationContext
 
+from agents.security_boundary import normalize_for_security
 from core.config import ALLOWED_TOPICS, BLOCKED_TOPICS
 
 # Quyết định rõ ràng — tránh đảo nghĩa True/False
@@ -52,13 +53,20 @@ def detect_injection(user_input: str) -> InputStatus:
         ``"BLOCK"`` if injection detected (chặn), ``"ALLOW"`` otherwise (cho qua).
     """
     INJECTION_PATTERNS = [
-        # TODO: Add at least 5 regex patterns
-        # Example:
-        # r"ignore (all )?(previous|above) instructions",
+        r"\bignore\s+(?:all\s+)?(?:(?:previous|above)\s+)?instructions\b",
+        r"\byou\s+are\s+now\b",
+        r"(?:^\s*system\s+prompt[?.!]?\s*$|"
+        r"\b(?:show|reveal|print|display|share|disclose|output|give|tell|repeat|"
+        r"quote|translate|encode|extract|access|what\s+is)"
+        r"\s+(?:(?:me|us)\s+)?(?:(?:the|your)\s+)?system\s+prompt\b)",
+        r"\breveal\s+your\s+(?:instructions|prompt)\b",
+        r"\bpretend\s+you\s+are\b",
+        r"\bact\s+as\s+(?:an?\s+)?unrestricted\b",
     ]
 
+    normalized_input = normalize_for_security(user_input)
     for pattern in INJECTION_PATTERNS:
-        if re.search(pattern, user_input, re.IGNORECASE):
+        if re.search(pattern, normalized_input, re.IGNORECASE):
             return "BLOCK"
     return "ALLOW"
 
@@ -84,14 +92,19 @@ def topic_filter(user_input: str) -> InputStatus:
         ``"BLOCK"`` = chặn (off-topic hoặc topic cấm).
         ``"ALLOW"`` = cho qua (câu banking hợp lệ).
     """
-    input_lower = user_input.lower()
+    normalized_input = " ".join(normalize_for_security(user_input).casefold().split())
 
-    # TODO: Implement logic:
-    # 1. If input contains any blocked topic -> return "BLOCK"
-    # 2. If input doesn't contain any allowed topic -> return "BLOCK"
-    # 3. Otherwise -> return "ALLOW"
-
-    pass  # Replace with your implementation
+    # A report of attempted account compromise is a banking support request.
+    blocked_topic_text = re.sub(
+        r"\b(?:someone|somebody|an attacker) (?:tried to hack|hacked) (?=my (?:bank )?account\b)",
+        "",
+        normalized_input,
+    )
+    if any(re.search(rf"\b{re.escape(topic)}\b", blocked_topic_text) for topic in BLOCKED_TOPICS):
+        return "BLOCK"
+    if any(re.search(rf"\b{re.escape(topic)}\b", normalized_input) for topic in ALLOWED_TOPICS):
+        return "ALLOW"
+    return "BLOCK"
 
 
 # ============================================================
@@ -144,14 +157,15 @@ class InputGuardrailPlugin(base_plugin.BasePlugin):
         self.total_count += 1
         text = self._extract_text(user_message)
 
-        # TODO: Implement logic:
-        # 1. Call detect_injection(text)
-        #    - If "BLOCK": increment blocked_count, return self._block_response("...")
-        # 2. Call topic_filter(text)
-        #    - If "BLOCK": increment blocked_count, return self._block_response("...")
-        # 3. If both return "ALLOW": return None (let message through)
+        if detect_injection(text) == "BLOCK":
+            self.blocked_count += 1
+            return self._block_response("Request blocked: potential prompt injection detected.")
 
-        pass  # Replace with your implementation
+        if topic_filter(text) == "BLOCK":
+            self.blocked_count += 1
+            return self._block_response("Request blocked: please ask a banking-related question.")
+
+        return None
 
 
 # ============================================================

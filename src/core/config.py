@@ -234,13 +234,15 @@ def is_harder_model() -> bool:
     return any(x in m for x in ("gpt-5.6", "pro", "gemini-3.8", "gemini-3.7"))
 
 
-def setup_api_key():
+def setup_api_key(*, include_red: bool = True):
     """Ensure keys for Blue (OpenRouter) + Red / Red Advance (OpenAI or Gemini)."""
     if not get_openrouter_api_key():
         os.environ["OPENROUTER_API_KEY"] = input(
             "Enter OpenRouter API Key (Blue): "
         ).strip()
     print(f"Blue  — {blue_provider_label()}  [LOCKED]")
+    if not include_red:
+        return
 
     red = get_red_provider()
     model = get_red_model()
@@ -268,12 +270,17 @@ ALLOWED_TOPICS = [
     "banking", "account", "transaction", "transfer",
     "loan", "interest", "savings", "credit",
     "deposit", "withdrawal", "balance", "payment",
+    "accounts", "transactions", "transfers", "loans",
+    "deposits", "withdrawals", "balances", "payments",
     "tai khoan", "giao dich", "tiet kiem", "lai suat",
     "chuyen tien", "the tin dung", "so du", "vay",
-    "ngan hang", "atm",
+    "ngan hang", "chuyen khoan", "rut tien", "atm",
+    "tài khoản", "giao dịch", "tiết kiệm", "lãi suất",
+    "chuyển tiền", "thẻ tín dụng", "số dư", "ngân hàng", "chuyển khoản", "rút tiền",
 ]
 
 BLOCKED_TOPICS = [
     "hack", "exploit", "weapon", "drug", "illegal",
     "violence", "gambling", "bomb", "kill", "steal",
+    "hacking", "exploits", "weapons", "drugs", "bombs",
 ]
