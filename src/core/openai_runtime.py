@@ -52,16 +52,28 @@ class OpenAIRunner:
         return OpenAI(**(self.client_kwargs or {}))
 
     async def chat(self, agent: OpenAIAgent, user_message: str) -> str:
+        block_msg, _ = await self.check_input(user_message)
+        if block_msg is not None:
+            return block_msg
+        return await self.complete(agent, user_message)
+
+    async def check_input(
+        self, user_message: str, *, user_id: str = "student"
+    ) -> tuple[str | None, str | None]:
+        """Return the rejection text and layer, or two None values."""
         for hook in self.input_hooks:
             blocked = hook(user_message)
             if blocked:
-                return blocked
+                return blocked, "input_hook"
 
-        block_msg = await self._run_input_plugins(user_message)
-        if block_msg is not None:
-            return block_msg
+        return await self._run_input_plugins(user_message, user_id=user_id)
 
+    async def complete(
+        self, agent: OpenAIAgent, user_message: str, *, max_tokens: int | None = None
+    ) -> str:
+        """Generate and filter a response for an admitted message."""
         client = self._client()
+        options = {"max_tokens": max_tokens} if max_tokens is not None else {}
         completion = client.chat.completions.create(
             model=self.model,
             messages=[
@@ -69,6 +81,7 @@ class OpenAIRunner:
                 {"role": "user", "content": user_message},
             ],
             temperature=self.temperature,
+            **options,
         )
         text = (completion.choices[0].message.content or "").strip()
 
@@ -78,19 +91,21 @@ class OpenAIRunner:
         text = await self._run_output_plugins(text)
         return text
 
-    async def _run_input_plugins(self, user_message: str) -> str | None:
+    async def _run_input_plugins(
+        self, user_message: str, *, user_id: str
+    ) -> tuple[str | None, str | None]:
         if not self.plugins:
-            return None
+            return None, None
         try:
             from google.genai import types
         except ImportError:
-            return None
+            return None, None
 
         user_content = types.Content(
             role="user",
             parts=[types.Part.from_text(text=user_message)],
         )
-        ctx = _MockInvocationContext()
+        ctx = _MockInvocationContext(user_id=user_id)
         for plugin in self.plugins:
             cb = getattr(plugin, "on_user_message_callback", None)
             if cb is None:
@@ -103,8 +118,8 @@ class OpenAIRunner:
                 result = cb(invocation_context=ctx, user_message=user_content)
             if result is None:
                 continue
-            return _content_to_text(result)
-        return None
+            return _content_to_text(result), getattr(plugin, "name", type(plugin).__name__)
+        return None, None
 
     async def _run_output_plugins(self, text: str) -> str:
         if not self.plugins or not text:

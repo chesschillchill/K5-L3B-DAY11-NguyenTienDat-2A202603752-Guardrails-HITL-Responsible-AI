@@ -27,7 +27,7 @@ if str(_SRC_DIR) not in sys.path:
 from core.config import setup_api_key
 
 
-async def part2_guardrails():
+async def part2_guardrails(with_optionals=False):
     """Checkpoint 2: input + output guardrails."""
     print("\n" + "=" * 60)
     print("CHECKPOINT 2: Guardrails")
@@ -46,9 +46,15 @@ async def part2_guardrails():
     await test_input_plugin()
 
     print("\n--- Output Guardrails ---")
-    from guardrails.output_guardrails import test_content_filter
+    from guardrails.output_guardrails import test_content_filter, test_output_plugin
     test_content_filter()
-    print("(LLM-as-Judge / NeMo — optional, skipped)")
+    await test_output_plugin(use_llm_judge=with_optionals)
+
+    if with_optionals:
+        from guardrails.nemo_guardrails import init_nemo, test_nemo_guardrails
+        print("\n--- NeMo Guardrails ---")
+        if init_nemo() is not None:
+            await test_nemo_guardrails()
 
 
 async def part3_assignment_suite():
@@ -133,15 +139,15 @@ async def part4_attacks():
     }
 
 
-async def main(parts=None):
-    setup_api_key()
-
+async def main(parts=None, *, with_optionals=False):
     if parts is None:
         parts = [2, 3, 4]  # Core: CP2 → CP3 → CP4
 
+    setup_api_key(include_red=parts != [3])
+
     for part in parts:
         if part == 2:
-            await part2_guardrails()
+            await part2_guardrails(with_optionals=with_optionals)
         elif part == 3:
             await part3_assignment_suite()
         elif part == 4:
@@ -167,9 +173,16 @@ if __name__ == "__main__":
         choices=[2, 3, 4],
         help="2=CP2 guardrails · 3=CP3 suite · 4=CP4 red-team",
     )
+    parser.add_argument(
+        "--with-optionals",
+        action="store_true",
+        help="Chạy thêm LLM-as-Judge và demo NeMo cho --part 2 (cần GOOGLE_API_KEY)",
+    )
     args = parser.parse_args()
+    if args.with_optionals and args.part != 2:
+        parser.error("--with-optionals cần --part 2")
 
     if args.part:
-        asyncio.run(main(parts=[args.part]))
+        asyncio.run(main(parts=[args.part], with_optionals=args.with_optionals))
     else:
         asyncio.run(main())

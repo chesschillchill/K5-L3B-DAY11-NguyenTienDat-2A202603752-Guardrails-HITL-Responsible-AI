@@ -53,6 +53,15 @@ def test_assignment_starters_exist():
         assert (ROOT / rel).is_file(), f"Missing {rel}"
 
 
+def test_blue_prompt_excludes_protected_demo_values():
+    from agents.agent import create_blue_agent
+    from core.config import DEMO_SECRETS, load_protected_payload
+
+    agent, _ = create_blue_agent([])
+    protected_values = set(DEMO_SECRETS) | set(load_protected_payload()["secrets"].values())
+    assert not any(value in agent.instruction for value in protected_values)
+
+
 def test_red_agent_advance_exports_factory():
     import sys
 
